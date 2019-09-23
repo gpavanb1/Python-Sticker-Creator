@@ -1,0 +1,1 @@
+model_file = "models/deeplabv3_257_mv_gpu.tflite"
