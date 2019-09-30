@@ -5,19 +5,70 @@ import cv2
 import numpy as np
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
+import matplotlib.font_manager as fm
+import matplotlib.patheffects as path_effects
+import matplotlib
+# make sure Tk backend is used
+matplotlib.use("TkAgg")
+from PIL import Image
 
 
-LABEL_NAMES = np.asarray([
-        'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-        'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-        'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tv'
-    ])
+def add_meme_text(_str, image):
+    # Find location to add
+    _width = image.shape[1]
+    _height = image.shape[0]
+
+    # Meme font
+    prop = fm.FontProperties(fname='fonts/debussy.ttf')
+
+    # Justify text
+    text = plt.text(_width*0.5, _height*0.8, _str, color='blue', fontproperties=prop,
+                    multialignment='center', wrap=True,
+                    ha='center', va='center', size=20)
+    text.set_path_effects([path_effects.Stroke(linewidth=6, foreground='white'),
+                           path_effects.Normal()])
+
+
+def make_transparent(src):
+    tmp = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+    _, alpha = cv2.threshold(tmp, 0, 255, cv2.THRESH_BINARY)
+    b, g, r = cv2.split(src)
+    rgba = [b, g, r, alpha]
+    dst = cv2.merge(rgba, 4)
+    return dst
+
+
+def smooth_edges(image):
+    # Median blur - smooth edges
+    img = cv2.medianBlur(image, 35)
+    return img
+
+
+def contour_mask(image, mask):
+    # Get edges through Canny edge detection
+    edged = cv2.Canny(mask, 30, 200)
+    # Finding Contours
+    contours, hierarchy = cv2.findContours(edged,
+                          cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # Draw contours
+    # -1 signifies drawing all contours
+    cv2.drawContours(image, contours, -1, (255, 255, 255), 8)
+
+    return image
+
+
+def mask_out(src, mask):
+    _mask_out = cv2.subtract(mask, src)
+    _mask_out = cv2.subtract(mask, _mask_out)
+    return _mask_out
 
 
 class Segment:
-    def __init__(self, img_path):
+    def __init__(self, img_path, meme_text, dpi=127.68):
         # Variables
         self.segment_map = None
+        self.meme_text = meme_text
+        self.dpi = dpi
 
         # Initialize TF model
         print("Using model: " + settings.model_file)
@@ -30,62 +81,12 @@ class Segment:
         self.image = cv2.imread(img_path)
         print("Loaded image")
 
-        # Additional variables
-        FULL_LABEL_MAP = np.arange(len(LABEL_NAMES)).reshape(len(LABEL_NAMES), 1)
-        self.FULL_COLOR_MAP = self.label_to_color_image(FULL_LABEL_MAP)
-
     def find_segments(self):
         output_tensors = run_tf.run_model(self.interpreter, self.image)
         self.segment_map = run_tf.output_to_classes(output_tensors)
         return self.segment_map
 
-    # Code taken from Google Colab
-    # https://github.com/tensorflow/models/blob/master/research/deeplab/deeplab_demo.ipynb
-    @staticmethod
-    def create_pascal_label_colormap():
-        """Creates a label colormap used in PASCAL VOC segmentation benchmark.
-
-        Returns:
-          A Colormap for visualizing segmentation results.
-        """
-        colormap = np.zeros((256, 3), dtype=int)
-        ind = np.arange(256, dtype=int)
-
-        for shift in reversed(range(8)):
-            for channel in range(3):
-                colormap[:, channel] |= ((ind >> channel) & 1) << shift
-            ind >>= 3
-
-        return colormap
-
-    # Code taken from Google Colab
-    # https://github.com/tensorflow/models/blob/master/research/deeplab/deeplab_demo.ipynb
-    def label_to_color_image(self, label):
-        """Adds color defined by the dataset colormap to the label.
-
-        Args:
-          label: A 2D array with integer type, storing the segmentation label.
-
-        Returns:
-          result: A 2D array with floating type. The element of the array
-            is the color indexed by the corresponding element in the input label
-            to the PASCAL color map.
-
-        Raises:
-          ValueError: If label is not of rank 2 or its value is larger than color
-            map maximum entry.
-        """
-        if label.ndim != 2:
-            raise ValueError('Expect 2-D input label')
-
-        colormap = self.create_pascal_label_colormap()
-
-        if np.max(label) >= len(colormap):
-            raise ValueError('label value too large.')
-
-        return colormap[label]
-
-    # Code taken from Google Colab
+    # Code taken partially from Google Colab
     # https://github.com/tensorflow/models/blob/master/research/deeplab/deeplab_demo.ipynb
     def vis_segmentation(self):
         """Visualizes input image, segmentation map and overlay view."""
@@ -93,41 +94,45 @@ class Segment:
         image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB).astype(np.uint8)
         seg_map = self.segment_map
 
-        plt.figure(figsize=(15, 5))
-        grid_spec = gridspec.GridSpec(1, 4, width_ratios=[6, 6, 6, 1])
+        plt.figure(figsize=(512/self.dpi, 512/self.dpi), dpi=self.dpi)
+        grid_spec = gridspec.GridSpec(1, 1)
 
-        plt.subplot(grid_spec[0])
-        plt.imshow(image)
-        plt.axis('off')
-        plt.title('input image')
+        # Process segmentation mask
+        # Scale seg_map
+        seg_map = (seg_map/np.max(seg_map)) * 255
+        seg_image = Image.fromarray(seg_map.astype('uint8'))
+        seg_image = cv2.cvtColor(np.array(seg_image), cv2.COLOR_RGB2BGR)
 
-        plt.subplot(grid_spec[1])
-        seg_image = self.label_to_color_image(seg_map).astype(np.uint8)
-        # Blur seg_image
-        seg_image = cv2.GaussianBlur(seg_image, (5, 5), 0)
-        plt.imshow(seg_image)
-        plt.axis('off')
-        plt.title('segmentation map')
-
-        plt.subplot(grid_spec[2])
+        # Resize segmentation mask
         _width = image.shape[1]
         _height = image.shape[0]
         _num_channels = 3
-        res_seg_image = cv2.resize(seg_image, (_width, _height), _num_channels)
-        plt.imshow(image)
-        plt.imshow(res_seg_image, alpha=0.7)
+        res_seg_image = cv2.resize(seg_image, (_width, _height),
+                                   _num_channels)
+
+        # Postprocess mask
+        res_seg_image = smooth_edges(res_seg_image)
+
+        # Mask out image
+        res_image = mask_out(image, res_seg_image)
+
+        # Contour mask
+        res_image = contour_mask(res_image, res_seg_image)
+
+        # Add text
+        plt.subplot(grid_spec[0])
+
+        # Resize to standard 512x512 before display
+        res_image = cv2.resize(res_image, (512, 512))
+        add_meme_text(self.meme_text, res_image)
+
+        # Make image transparent
+        res_image = make_transparent(res_image)
+
+        # Show image
+        plt.imshow(res_image)
         plt.axis('off')
-        plt.title('segmentation overlay')
 
-        unique_labels = np.unique(seg_map)
-        ax = plt.subplot(grid_spec[3])
-        plt.imshow(
-            self.FULL_COLOR_MAP[unique_labels].astype(np.uint8), interpolation='nearest')
-        ax.yaxis.tick_right()
-        plt.yticks(range(len(unique_labels)), LABEL_NAMES[unique_labels])
-        plt.xticks([], [])
-        ax.tick_params(width=0.0)
-        plt.grid('off')
+        plt.savefig('test.png', transparent=True)
         plt.show()
-
 
