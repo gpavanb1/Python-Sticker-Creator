@@ -9,7 +9,7 @@ create Whatsapp stickers with custom text
 ## How to install and execute
 Install the requirements using `pip install -r requirements.txt`
 
-Once completed successfully, just run `main.py`
+Once completed successfully, just run `start.py`
 
 ## Sample Output
 
