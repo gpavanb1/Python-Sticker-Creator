@@ -1,0 +1,33 @@
+#upload-image {
+    width: 80%;
+    height: 60px;
+    line-height: 60px;
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 5px;
+    text-align: center;
+    margin: 10px;
+}
+
+#meme-text {
+    width: 80%;
+    margin: 10px;
+}
+
+#heading {
+    text-align: center;
+    margin-left: -15%;
+}
+
+#submit-button {
+    margin: 10px;
+}
+
+#filename {
+    margin: 10px;
+}
+
+#image-holder {
+    display: flex;
+    justify-content: center;
+}

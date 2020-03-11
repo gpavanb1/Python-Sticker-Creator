@@ -134,5 +134,5 @@ class Segment:
         plt.axis('off')
 
         plt.savefig('test.png', transparent=True)
-        plt.show()
+        # plt.show()
 
