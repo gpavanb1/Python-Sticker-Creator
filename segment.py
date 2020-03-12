@@ -2,6 +2,8 @@ import run_tf
 import settings
 import tensorflow as tf
 import cv2
+import io
+import base64
 import numpy as np
 from matplotlib import gridspec
 from matplotlib import pyplot as plt
@@ -133,6 +135,13 @@ class Segment:
         plt.imshow(res_image)
         plt.axis('off')
 
-        plt.savefig('test.png', transparent=True)
+        # Convert to bytestring
+        prefix = b'data:image/jpeg;base64,'
+        buf = io.BytesIO()
+        plt.savefig(buf, format='jpeg', transparent=True)
+        buf.seek(0)
+        image_string = (prefix + base64.b64encode(
+        buf.getvalue())).decode("utf-8")
+        return image_string
         # plt.show()
 
