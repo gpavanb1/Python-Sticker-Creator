@@ -13,6 +13,7 @@ import matplotlib
 # make sure Tk backend is used
 matplotlib.use("TkAgg")
 from PIL import Image
+from helper import img_string_to_cv2
 
 
 def add_meme_text(_str, image):
@@ -66,7 +67,7 @@ def mask_out(src, mask):
 
 
 class Segment:
-    def __init__(self, img_path, meme_text, dpi=127.68):
+    def __init__(self, image_string, meme_text, dpi=127.68):
         # Variables
         self.segment_map = None
         self.meme_text = meme_text
@@ -80,7 +81,7 @@ class Segment:
 
         # Load image
         # TODO : Add error capture
-        self.image = cv2.imread(img_path)
+        self.image = img_string_to_cv2(image_string)
         print("Loaded image")
 
     def find_segments(self):

@@ -1,18 +1,13 @@
 import base64
-from io import BytesIO
-from PIL import Image
+import cv2
+import numpy as np
 
 
-def b64_to_file(image_string, filename='sample.png'):
-    img = Image.open(BytesIO(base64.b64decode(image_string[22:])))
-    img.save(filename)
+def img_string_to_cv2(image_string):
+    jpg_original = base64.b64decode(image_string[23:])
+    jpg_as_np = np.frombuffer(jpg_original, dtype=np.uint8)
+    img_cv2 = cv2.imdecode(jpg_as_np, cv2.IMREAD_COLOR)
 
-def file_to_b64(filename='test.png'):
-    prefix = b'data:image/png;base64,'
-    pil_img = Image.open(filename)
-    buff = BytesIO()
-    pil_img.save(buff, format="png")
-    image_string = (prefix + base64.b64encode(
-        buff.getvalue())).decode("utf-8")
-    return image_string
+    return img_cv2
+
     
