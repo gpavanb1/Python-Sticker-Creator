@@ -19,3 +19,7 @@ Once completed successfully, just run `start.py`
 
 Please direct your queries to [gpavanb1](http://github.com/gpavanb1)
 for any questions.
+
+## Credits
+
+Many thanks to [commandSpace](https://github.com/commandSpace) for his constant flux of ideas and this was one of them.
