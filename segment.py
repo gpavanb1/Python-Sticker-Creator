@@ -10,8 +10,6 @@ from matplotlib import pyplot as plt
 import matplotlib.font_manager as fm
 import matplotlib.patheffects as path_effects
 import matplotlib
-# make sure Tk backend is used
-matplotlib.use("TkAgg")
 from PIL import Image
 from helper import img_string_to_cv2
 
