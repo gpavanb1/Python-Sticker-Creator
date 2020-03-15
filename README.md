@@ -15,6 +15,10 @@ Once completed successfully, just run `start.py`
 
 ![sample](images/sample.png)
 
+## Sample Screenshot
+
+![sample-screen](images/sample_screen.png)
+
 ## Whom to contact?
 
 Please direct your queries to [gpavanb1](http://github.com/gpavanb1)
